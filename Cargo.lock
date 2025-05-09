@@ -151,39 +151,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "annotate-snippets"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d9b665789884a7e8fb06c84b295e923b03ca51edbb7d08f91a6a50322ecbfe6"
-dependencies = [
- "anstyle",
- "unicode-width",
-]
-
-[[package]]
-name = "anstyle"
-version = "1.0.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55cc3b69f167a1ef2e161439aa98aed94e6028e5f9a59be9a6ffb47aef1651f9"
-
-[[package]]
-name = "antlr-rust"
-version = "0.3.0-beta"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfc6ab5594c6b2b7aa8719f4ecb785a268b2e0c2529042046035d5cebe9fa7d7"
-dependencies = [
- "better_any",
- "bit-set 0.5.3",
- "byteorder",
- "lazy_static",
- "murmur3",
- "once_cell",
- "parking_lot 0.11.2",
- "typed-arena",
- "uuid 0.8.2",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.98"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -342,12 +309,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
-name = "better_any"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1795ebc740ea791ffbe6685e0688ab1effec16c2864e0476db40bfdf0c02cb3d"
-
-[[package]]
 name = "bevy"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -401,7 +362,7 @@ dependencies = [
  "thiserror 2.0.12",
  "thread_local",
  "tracing",
- "uuid 1.16.0",
+ "uuid",
 ]
 
 [[package]]
@@ -456,13 +417,13 @@ dependencies = [
  "futures-lite",
  "js-sys",
  "notify-debouncer-full",
- "parking_lot 0.12.3",
+ "parking_lot",
  "ron",
  "serde",
  "stackfuture",
  "thiserror 2.0.12",
  "tracing",
- "uuid 1.16.0",
+ "uuid",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -841,7 +802,7 @@ version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a2473db70d8785b5c75d6dd951a2e51e9be2c2311122db9692c79c9d887517b"
 dependencies = [
- "parking_lot 0.12.3",
+ "parking_lot",
  "proc-macro2",
  "quote",
  "syn",
@@ -958,7 +919,7 @@ dependencies = [
  "bevy_window",
  "crossbeam-channel",
  "tracing",
- "uuid 1.16.0",
+ "uuid",
 ]
 
 [[package]]
@@ -1007,7 +968,7 @@ dependencies = [
  "smallvec",
  "smol_str",
  "thiserror 2.0.12",
- "uuid 1.16.0",
+ "uuid",
  "variadics_please",
  "wgpu-types",
 ]
@@ -1022,7 +983,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
- "uuid 1.16.0",
+ "uuid",
 ]
 
 [[package]]
@@ -1107,7 +1068,7 @@ dependencies = [
  "derive_more",
  "serde",
  "thiserror 2.0.12",
- "uuid 1.16.0",
+ "uuid",
 ]
 
 [[package]]
@@ -1897,7 +1858,7 @@ dependencies = [
  "crossterm_winapi",
  "libc",
  "mio 0.8.11",
- "parking_lot 0.12.3",
+ "parking_lot",
  "signal-hook",
  "signal-hook-mio",
  "winapi",
@@ -2404,7 +2365,7 @@ dependencies = [
  "fnv",
  "gilrs-core",
  "log",
- "uuid 1.16.0",
+ "uuid",
  "vec_map",
 ]
 
@@ -2422,7 +2383,7 @@ dependencies = [
  "libudev-sys",
  "log",
  "nix",
- "uuid 1.16.0",
+ "uuid",
  "vec_map",
  "wasm-bindgen",
  "web-sys",
@@ -2794,18 +2755,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "instant"
-version = "0.1.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0242819d153cba4b4b05a5a8f2a7e9bbf97b6055b2a002b395c96b5ff3c0222"
-dependencies = [
- "cfg-if",
- "js-sys",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "io-kit-sys"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3147,15 +3096,6 @@ name = "multimap"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "defc4c55412d89136f966bbb339008b474350e5e6e78d2714439c386b3137a03"
-
-[[package]]
-name = "murmur3"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a198f9589efc03f544388dfc4a19fe8af4323662b62f598b8dcfdac62c14771c"
-dependencies = [
- "byteorder",
-]
 
 [[package]]
 name = "naga"
@@ -3681,37 +3621,12 @@ checksum = "f38d5652c16fde515bb1ecef450ab0f6a219d619a7274976324d5e377f7dceba"
 
 [[package]]
 name = "parking_lot"
-version = "0.11.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
-dependencies = [
- "instant",
- "lock_api",
- "parking_lot_core 0.8.6",
-]
-
-[[package]]
-name = "parking_lot"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1bf18183cf54e8d6059647fc3063646a1801cf30896933ec2311622cc4b9a27"
 dependencies = [
  "lock_api",
- "parking_lot_core 0.9.10",
-]
-
-[[package]]
-name = "parking_lot_core"
-version = "0.8.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60a2cfe6f0ad2bfc16aefa463b497d5c7a5ecd44a23efa72aa342d90177356dc"
-dependencies = [
- "cfg-if",
- "instant",
- "libc",
- "redox_syscall 0.2.16",
- "smallvec",
- "winapi",
+ "parking_lot_core",
 ]
 
 [[package]]
@@ -4072,15 +3987,6 @@ name = "rectangle-pack"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a0d463f2884048e7153449a55166f91028d5b0ea53c79377099ce4e8cf0cf9bb"
-
-[[package]]
-name = "redox_syscall"
-version = "0.2.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb5a58c1855b4b6819d59012155603f0b22ad30cad752600aadfcb695265519a"
-dependencies = [
- "bitflags 1.3.2",
-]
 
 [[package]]
 name = "redox_syscall"
@@ -4724,7 +4630,7 @@ dependencies = [
  "cc",
  "cfg-if",
  "once_cell",
- "parking_lot 0.12.3",
+ "parking_lot",
  "tracing-core",
  "tracing-subscriber",
 ]
@@ -4775,12 +4681,6 @@ name = "twox-hash"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7b17f197b3050ba473acf9181f7b1d3b66d1cf7356c6cc57886662276e65908"
-
-[[package]]
-name = "typed-arena"
-version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6af6ae20167a9ece4bcb41af5b80f8a1f1df981f6391189ce00fd257af04126a"
 
 [[package]]
 name = "typeid"
@@ -4873,12 +4773,6 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
-
-[[package]]
-name = "uuid"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
 
 [[package]]
 name = "uuid"
@@ -5050,7 +4944,7 @@ dependencies = [
  "js-sys",
  "log",
  "naga",
- "parking_lot 0.12.3",
+ "parking_lot",
  "profiling",
  "raw-window-handle",
  "smallvec",
@@ -5078,7 +4972,7 @@ dependencies = [
  "log",
  "naga",
  "once_cell",
- "parking_lot 0.12.3",
+ "parking_lot",
  "profiling",
  "raw-window-handle",
  "rustc-hash",
@@ -5119,7 +5013,7 @@ dependencies = [
  "objc",
  "once_cell",
  "ordered-float",
- "parking_lot 0.12.3",
+ "parking_lot",
  "profiling",
  "range-alloc",
  "raw-window-handle",
@@ -5764,7 +5658,6 @@ dependencies = [
  "bevy_platform",
  "log",
  "regex",
- "yarnspinner_compiler",
  "yarnspinner_core",
  "yarnspinner_runtime",
 ]
@@ -5775,21 +5668,6 @@ version = "0.1.0"
 dependencies = [
  "prost",
  "prost-build",
-]
-
-[[package]]
-name = "yarnspinner_compiler"
-version = "0.5.0"
-dependencies = [
- "annotate-snippets",
- "antlr-rust",
- "better_any",
- "bevy",
- "instant",
- "rand",
- "regex",
- "serde",
- "yarnspinner_core",
 ]
 
 [[package]]

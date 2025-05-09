@@ -9,10 +9,6 @@ pub use log;
 
 pub mod prelude {
     //! Everything you need to get started using Yarn Spinner.
-    pub use crate::compiler::{
-        Compilation, CompilationType, Compiler as YarnCompiler, CompilerError, File as YarnFile,
-        LineInfo, Result as YarnCompilerResult, StringInfo,
-    };
     pub use crate::core::{
         yarn_library, IntoYarnValueFromNonYarnValue, Library as YarnLibrary, LineId,
         Program as YarnProgram, YarnFn, YarnValue,
@@ -34,12 +30,6 @@ pub mod core {
         YarnValueCastError, YarnValueWrapper, YarnValueWrapperIter,
     };
 }
-pub mod compiler {
-    //! Types and traits used by the compiler, in particular the [`Compiler`] struct.
-    pub use yarnspinner_compiler::prelude::*;
-    pub use yarnspinner_compiler::Result;
-}
-
 pub mod runtime {
     //! Types and traits used by the runtime, in particular the [`Dialogue`] struct.
     pub use yarnspinner_runtime::markup::{
