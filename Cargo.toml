@@ -6,8 +6,6 @@ members = [
     "crates/runtime",
     "crates/core",
     "crates/codegen",
-    "examples/bevy_yarnspinner",
-    "examples/yarnspinner_without_bevy",
 ]
 
 # Source: https://github.com/bevyengine/bevy/blob/main/examples/README.md#1-tweak-your-cargotoml
