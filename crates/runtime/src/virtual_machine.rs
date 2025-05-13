@@ -4,7 +4,6 @@
 //! The `Operand` extensions and the `Operator` enum were moved into upstream crates to make them not depend on the runtime.
 
 pub(crate) use self::{execution_state::*, state::*};
-use crate::markup::{LineParser, ParsedMarkup};
 use crate::prelude::*;
 use crate::Result;
 use core::fmt::Debug;
@@ -18,46 +17,28 @@ pub(crate) struct VirtualMachine {
     pub(crate) library: Library,
     pub(crate) program: Option<Program>,
     pub(crate) variable_storage: Box<dyn VariableStorage>,
-    pub(crate) line_hints_enabled: bool,
     current_node_name: Option<String>,
     state: State,
     execution_state: ExecutionState,
     current_node: Option<Node>,
     batched_events: Vec<DialogueEvent>,
-    line_parser: LineParser,
-    text_provider: Box<dyn TextProvider>,
-    language_code: Option<Language>,
 }
 
 impl VirtualMachine {
     pub(crate) fn new(
         library: Library,
         variable_storage: Box<dyn VariableStorage>,
-        line_parser: LineParser,
-        text_provider: Box<dyn TextProvider>,
     ) -> Self {
         Self {
             library,
             variable_storage,
-            line_parser,
-            text_provider,
-            language_code: Default::default(),
             program: Default::default(),
             current_node_name: Default::default(),
             state: Default::default(),
             execution_state: Default::default(),
             current_node: Default::default(),
             batched_events: Default::default(),
-            line_hints_enabled: Default::default(),
         }
-    }
-
-    pub(crate) fn text_provider(&self) -> &dyn TextProvider {
-        self.text_provider.as_ref()
-    }
-
-    pub(crate) fn text_provider_mut(&mut self) -> &mut dyn TextProvider {
-        self.text_provider.as_mut()
     }
 
     pub(crate) fn variable_storage(&self) -> &dyn VariableStorage {
@@ -66,13 +47,6 @@ impl VirtualMachine {
 
     pub(crate) fn variable_storage_mut(&mut self) -> &mut dyn VariableStorage {
         self.variable_storage.as_mut()
-    }
-
-    pub(crate) fn set_language_code(&mut self, language_code: impl Into<Option<Language>>) {
-        let language_code = language_code.into();
-        self.language_code.clone_from(&language_code);
-        self.line_parser.set_language_code(language_code.clone());
-        self.text_provider.set_language(language_code);
     }
 
     pub(crate) fn reset_state(&mut self) {
@@ -109,43 +83,7 @@ impl VirtualMachine {
         self.batched_events
             .push(DialogueEvent::NodeStart(node_name));
 
-        if self.line_hints_enabled {
-            self.send_line_hints();
-        }
         Ok(())
-    }
-
-    fn send_line_hints(&mut self) {
-        // Create a list; we will never have more lines and options
-        // than total instructions, so that's a decent capacity for
-        // the list
-        // [sic] TODO: maybe this list could be reused to save on allocations?
-
-        let string_ids: Vec<_> = self
-            .current_node
-            .as_ref()
-            .unwrap()
-            .instructions
-            .iter()
-            // Loop over every instruction and find the ones that run a
-            // line or add an option; these are the two instructions
-            // that will signal a line can appear to the player
-            .filter_map(|instruction| {
-                let opcode: OpCode = instruction.opcode.try_into().unwrap();
-                [OpCode::RunLine, OpCode::AddOption]
-                    .contains(&opcode)
-                    .then(|| {
-                        // Both RunLine and AddOption have the string ID
-                        // they want to show as their first operand, so
-                        // store that
-                        let id: String = instruction.operands[0].clone().try_into().unwrap();
-                        LineId(id)
-                    })
-            })
-            .collect();
-        self.text_provider.accept_line_hints(&string_ids);
-        self.batched_events
-            .push(DialogueEvent::LineHints(string_ids));
     }
 
     pub(crate) fn pop_line_hints(&mut self) -> Option<Vec<LineId>> {
@@ -204,10 +142,6 @@ impl VirtualMachine {
             debug!("Run complete.");
         }
         Ok(core::mem::take(&mut self.batched_events))
-    }
-
-    pub(crate) fn parse_markup(&mut self, line: &str) -> crate::markup::Result<ParsedMarkup> {
-        self.line_parser.parse_markup(line)
     }
 
     /// Runs a series of tests to see if the [`VirtualMachine`] is in a state where [`VirtualMachine::r#continue`] can be called. Panics if it can't.
@@ -300,10 +234,7 @@ impl VirtualMachine {
                 // line handler.
                 assert_up_to_date_compiler(instruction.operands.len() >= 2);
 
-                let substitutions = self.pop_substitutions_with_count_at_operand(instruction, 1);
-                let line = self.prepare_line(string_id, &substitutions)?;
-
-                self.batched_events.push(DialogueEvent::Line(line));
+                self.batched_events.push(DialogueEvent::Line(Line { id: string_id }));
 
                 // Implementation note:
                 // In the original, this is only done if `execution_state` is still `DeliveringContent`,
@@ -342,7 +273,7 @@ impl VirtualMachine {
                 let string_id: LineId = string_id.into();
                 assert_up_to_date_compiler(instruction.operands.len() >= 4);
                 let substitutions = self.pop_substitutions_with_count_at_operand(instruction, 2);
-                let line = self.prepare_line(string_id, &substitutions)?;
+                let line = Line { id: string_id };
 
                 // Indicates whether the VM believes that the
                 // option should be shown to the user, based on any
@@ -543,25 +474,6 @@ impl VirtualMachine {
             }
         }
         Ok(())
-    }
-
-    fn prepare_line(&mut self, string_id: LineId, substitutions: &[String]) -> Result<Line> {
-        let line_text = self.text_provider.get_text(&string_id).ok_or_else(|| {
-            DialogueError::LineProviderError {
-                id: string_id.clone(),
-                language_code: self.language_code.clone(),
-            }
-        })?;
-        let substituted_text = expand_substitutions(&line_text, substitutions);
-        let markup = self
-            .parse_markup(&substituted_text)
-            .map_err(DialogueError::MarkupParseError)?;
-        let line = Line {
-            id: string_id,
-            text: markup.text,
-            attributes: markup.attributes,
-        };
-        Ok(line)
     }
 
     /// Looks up the instruction number for a named label in the current node.
