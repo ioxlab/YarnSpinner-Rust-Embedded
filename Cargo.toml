@@ -3,7 +3,6 @@ resolver = "2"
 
 members = [
     "crates/example_dialogue_view",
-    "crates/bevy_plugin",
     "crates/yarnspinner",
     "crates/runtime",
     "crates/core",
