@@ -6,7 +6,6 @@ members = [
     "crates/runtime",
     "crates/core",
     "crates/codegen",
-    "demo",
     "examples/bevy_yarnspinner",
     "examples/yarnspinner_without_bevy",
 ]
