@@ -16,7 +16,7 @@ pub mod prelude {
     pub use crate::runtime::{
         Command as YarnCommand, CompiledProgramAnalyser as YarnAnalyser,
         Context as YarnAnalysisContext, Dialogue, DialogueError, DialogueEvent, DialogueOption,
-        Language, Line as YarnLine, MarkupAttribute, MarkupValue, OptionId,
+        Language, Line as YarnLine, OptionId,
         Result as YarnRuntimeResult, VariableStorage,
     };
 }
@@ -33,7 +33,7 @@ pub mod core {
 pub mod runtime {
     //! Types and traits used by the runtime, in particular the [`Dialogue`] struct.
     pub use yarnspinner_runtime::markup::{
-        MarkupAttribute, MarkupParseError, MarkupValue, CHARACTER_ATTRIBUTE,
+        CHARACTER_ATTRIBUTE,
         CHARACTER_ATTRIBUTE_NAME_PROPERTY, TRIM_WHITESPACE_PROPERTY,
     };
     pub use yarnspinner_runtime::prelude::*;

@@ -35,15 +35,6 @@ pub enum DialogueEvent {
     NodeComplete(String),
     /// The node with the given name was entered.
     NodeStart(String),
-    /// Only emitted if `Dialogue::should_send_line_hints` is enabled.
-    ///
-    /// A hint that the contained line IDs might be encountered while progressing the dialogue.
-    /// These are not guaranteed to run, but give a caller the chance to pre-load resources for them if they want.
-    ///
-    /// ## Implementation note
-    ///
-    /// Corresponds to Yarn Spinner's `PrepareForLinesHandler`
-    LineHints(Vec<LineId>),
     /// The dialogue was completed. Set it to a new node via [`Dialogue::set_node`] before calling [`Dialogue::continue_`] again.
     DialogueComplete,
 }

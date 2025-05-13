@@ -25,10 +25,6 @@ pub type Result<T> = core::result::Result<T, DialogueError>;
 #[derive(Debug)]
 pub enum DialogueError {
     MarkupParseError(MarkupParseError),
-    LineProviderError {
-        id: LineId,
-        language_code: Option<Language>,
-    },
     InvalidOptionIdError {
         selected_option_id: OptionId,
         max_id: usize,
@@ -63,7 +59,6 @@ impl Display for DialogueError {
         use DialogueError::*;
         match self {
             MarkupParseError(e) => Display::fmt(e, f),
-            LineProviderError { id, language_code } => write!(f, "Line ID \"{id}\" not found in line provider with language code {language_code:?}"),
             InvalidOptionIdError { selected_option_id, max_id } => write!(f, "{selected_option_id:?} is not a valid option ID (expected a number between 0 and {max_id}."),
             UnexpectedOptionSelectionError => f.write_str("An option was selected, but the dialogue wasn't waiting for a selection. This method should only be called after the Dialogue is waiting for the user to select an option."),
             ContinueOnOptionSelectionError => f.write_str("Dialogue was asked to continue running, but it is waiting for the user to select an option first."),

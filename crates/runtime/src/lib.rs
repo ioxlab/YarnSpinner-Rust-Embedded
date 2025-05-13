@@ -21,7 +21,6 @@ mod events;
 mod language;
 mod line;
 pub mod markup;
-mod pluralization;
 mod variable_storage;
 mod virtual_machine;
 
@@ -50,6 +49,6 @@ pub mod prelude {
         markup::MarkupParseError,
         variable_storage::*,
     };
-    pub(crate) use crate::{pluralization::*, virtual_machine::*};
+    pub(crate) use crate::{virtual_machine::*};
     pub(crate) use yarnspinner_core::prelude::*;
 }

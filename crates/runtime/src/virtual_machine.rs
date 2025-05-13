@@ -86,26 +86,11 @@ impl VirtualMachine {
         Ok(())
     }
 
-    pub(crate) fn pop_line_hints(&mut self) -> Option<Vec<LineId>> {
-        match self.batched_events.pop() {
-            Some(DialogueEvent::LineHints(string_ids)) => Some(string_ids),
-            Some(event) => {
-                self.batched_events.push(event);
-                None
-            }
-            None => None,
-        }
-    }
-
     fn get_node_from_name(&self, node_name: &str) -> Result<&Node> {
         let program = self
             .program
             .as_ref()
             .ok_or_else(|| DialogueError::NoProgramLoaded)?;
-        assert!(
-            !program.nodes.is_empty(),
-            "Cannot load node \"{node_name}\": No nodes have been loaded.",
-        );
 
         program
             .nodes
@@ -272,7 +257,6 @@ impl VirtualMachine {
                 let string_id: String = instruction.read_operand(0);
                 let string_id: LineId = string_id.into();
                 assert_up_to_date_compiler(instruction.operands.len() >= 4);
-                let substitutions = self.pop_substitutions_with_count_at_operand(instruction, 2);
                 let line = Line { id: string_id };
 
                 // Indicates whether the VM believes that the
@@ -522,21 +506,4 @@ fn assert_up_to_date_compiler(predicate: bool) {
         "The Yarn script provided was compiled using an older compiler. \
         Please recompile it using the latest version of either Yarn Spinner or Yarn Spinner."
     )
-}
-
-/// Replaces all substitution markers in a text with the given substitution list.
-///
-/// This method replaces substitution markers
-/// (for example, `{0}`) with the corresponding entry in `substitutions`.
-/// If `test` contains a substitution marker whose
-/// index is not present in `substitutions`, it is
-/// ignored.
-#[must_use]
-fn expand_substitutions(text: &str, substitutions: &[String]) -> String {
-    substitutions
-        .iter()
-        .enumerate()
-        .fold(text.to_owned(), |text, (i, substitution)| {
-            text.replace(&format!("{{{i}}}",), substitution)
-        })
 }
