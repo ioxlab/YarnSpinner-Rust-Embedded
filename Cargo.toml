@@ -2,7 +2,6 @@
 resolver = "2"
 
 members = [
-    "crates/example_dialogue_view",
     "crates/yarnspinner",
     "crates/runtime",
     "crates/core",
