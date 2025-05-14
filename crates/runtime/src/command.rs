@@ -8,13 +8,7 @@ use crate::prelude::*;
 
 /// A custom command found in a Yarn file within the `<<` and `>>` characters.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bevy", reflect(Debug, PartialEq))]
-#[cfg_attr(
-    all(feature = "bevy", feature = "serde"),
-    reflect(Serialize, Deserialize)
-)]
 pub struct Command {
     /// The command name, i.e. the first identifier that was passed in the command.
     /// For example, in the command `<<set_sprite ship "happy">>`, the command name is `set_sprite`.

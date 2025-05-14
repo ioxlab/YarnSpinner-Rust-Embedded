@@ -9,27 +9,19 @@ pub(crate) fn function_type_properties(function_type: &FunctionType) -> TypeProp
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bevy", reflect(Debug, PartialEq, Default, Hash))]
-#[cfg_attr(
-    all(feature = "bevy", feature = "serde"),
-    reflect(Serialize, Deserialize)
-)]
 /// A type that represents functions.
 ///
 /// Functions have parameters and a return type, and can be called from
 /// script. Instances of this type are created when the host
 /// application registers new functions (such as through using the [`Library::add_function`] methods or similar.)
 pub struct FunctionType {
-    #[cfg_attr(feature = "bevy", reflect(ignore))]
     /// The list of the parameter types that this function is called with.
     ///
     /// The length of this list also determines the number of parameters this function accepts
     /// (also known as the function's *arity*).
     pub parameters: Vec<Option<Type>>,
 
-    #[cfg_attr(feature = "bevy", reflect(ignore))]
     ///The type of value that this function returns.
     // Needs to be on the heap because of type recursion
     pub return_type: Box<Option<Type>>,

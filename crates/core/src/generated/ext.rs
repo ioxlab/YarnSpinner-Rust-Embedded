@@ -135,16 +135,3 @@ impl Program {
         Some(output)
     }
 }
-
-impl Instruction {
-    pub fn read_operand<T>(&self, index: usize) -> T
-    where
-        T: TryFrom<Operand>,
-        <T as TryFrom<Operand>>::Error: Debug,
-    {
-        self.operands[index]
-            .clone()
-            .try_into()
-            .unwrap_or_else(|e| panic!("Failed to convert operand {index}: {e:?}",))
-    }
-}

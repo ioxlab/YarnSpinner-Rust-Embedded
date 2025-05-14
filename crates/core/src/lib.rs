@@ -13,7 +13,6 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-mod feature_gates;
 mod generated;
 mod internal_value;
 mod library;
@@ -26,8 +25,6 @@ mod yarn_value;
 
 pub mod prelude {
     //! Types and functions used all throughout the runtime and compiler.
-    #[cfg(any(feature = "bevy", feature = "serde"))]
-    pub use crate::feature_gates::*;
 
     // Re-export alloc types for internal use only
     pub(crate) use crate::{
@@ -41,7 +38,7 @@ pub mod prelude {
 
     pub use crate::{
         generated::{
-            instruction::OpCode, operand::Value as OperandValue, Header, Instruction,
+            instruction, operand::Value as OperandValue, Header, Instruction,
             InvalidOpCodeError, Node, Operand, Program,
         },
         internal_value::*,

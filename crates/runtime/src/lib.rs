@@ -13,7 +13,6 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-mod analyser;
 mod command;
 mod dialogue;
 mod dialogue_option;
@@ -39,7 +38,6 @@ pub mod prelude {
     };
 
     pub use crate::{
-        analyser::*,
         command::*,
         dialogue::{Dialogue, DialogueError},
         dialogue_option::*,

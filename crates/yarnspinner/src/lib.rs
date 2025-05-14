@@ -14,8 +14,8 @@ pub mod prelude {
         Program as YarnProgram, YarnFn, YarnValue,
     };
     pub use crate::runtime::{
-        Command as YarnCommand, CompiledProgramAnalyser as YarnAnalyser,
-        Context as YarnAnalysisContext, Dialogue, DialogueError, DialogueEvent, DialogueOption,
+        Command as YarnCommand,
+        Dialogue, DialogueError, DialogueEvent, DialogueOption,
         Language, Line as YarnLine, OptionId,
         Result as YarnRuntimeResult, VariableStorage,
     };

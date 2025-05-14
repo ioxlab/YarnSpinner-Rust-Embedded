@@ -8,6 +8,7 @@ use crate::prelude::*;
 use crate::Result;
 use core::fmt::Debug;
 use log::*;
+use yarnspinner_core::prelude::instruction::{AddOptionInstruction, CallFunctionInstruction, InstructionType, JumpIfFalseInstruction, JumpToInstruction, PushBoolInstruction, PushFloatInstruction, PushStringInstruction, PushVariableInstruction, RunCommandInstruction, RunLineInstruction, RunNodeInstruction, StoreVariableInstruction};
 
 mod execution_state;
 mod state;
@@ -110,7 +111,7 @@ impl VirtualMachine {
 
         while self.execution_state == ExecutionState::Running {
             let current_node = self.current_node.clone().unwrap();
-            let current_instruction = &current_node.instructions[self.state.program_counter];
+            let current_instruction = &current_node.instructions[self.state.program_counter as usize];
             instruction_fn(self, current_instruction)?;
             // ## Implementation note
             // The original increments the program counter here, but that leads to intentional underflow on [`OpCode::RunNode`],
@@ -193,31 +194,32 @@ impl VirtualMachine {
         instruction: &Instruction,
         mut function_call_fn: impl FnMut(&dyn UntypedYarnFn, Vec<YarnValue>) -> YarnValue,
     ) -> crate::Result<()> {
-        let opcode: OpCode = instruction.opcode.try_into().unwrap();
-        match opcode {
-            OpCode::JumpTo => {
+        let Some(instruction_type) = &instruction.instruction_type else {
+            panic!("Instruction type is None");
+        };
+
+        match instruction_type {
+            InstructionType::JumpTo(JumpToInstruction { destination }) => {
                 // Jumps to a named label
-                let label_name: String = instruction.read_operand(0);
-                self.state.program_counter = self.find_instruction_point_for_label(&label_name);
+                self.state.program_counter = *destination as usize;
             }
-            OpCode::Jump => {
-                // Jumps to a label whose name is on the stack.
-                let jump_destination: String = self.state.peek();
-                self.state.program_counter =
-                    self.find_instruction_point_for_label(&jump_destination);
+            InstructionType::PeekAndJump(_) => {
+                let jump_destination: usize = self.state.peek();
+                self.state.program_counter = jump_destination;
             }
-            OpCode::RunLine => {
+            InstructionType::RunLine(RunLineInstruction { line_id, substitution_count }) => {
                 // Looks up a string from the string table and passes it to the client as a line
 
-                let string_id: String = instruction.read_operand(0);
-                let string_id: LineId = string_id.into();
+                let string_id: LineId = line_id.into();
 
                 // The second operand, if provided (compilers prior
                 // to v1.1 don't include it), indicates the number
                 // of expressions in the line. We need to pop these
                 // values off the stack and deliver them to the
                 // line handler.
-                assert_up_to_date_compiler(instruction.operands.len() >= 2);
+                for _ in 0..*substitution_count {
+                    self.state.pop_value();
+                }
 
                 self.batched_events.push(DialogueEvent::Line(Line { id: string_id }));
 
@@ -229,15 +231,12 @@ impl VirtualMachine {
                 self.set_execution_state(ExecutionState::WaitingForContinue);
                 self.state.program_counter += 1;
             }
-            OpCode::RunCommand => {
+            InstructionType::RunCommand(RunCommandInstruction { command_text, substitution_count }) => {
                 // Passes a string to the client as a custom command
-                let command_text: String = instruction.read_operand(0);
-                assert_up_to_date_compiler(instruction.operands.len() >= 2);
-                let command_text = self
-                    .pop_substitutions_with_count_at_operand(instruction, 1)
-                    .into_iter()
+                let command_text = (0..*substitution_count)
+                    .map(|_| self.state.pop::<String>())
                     .enumerate()
-                    .fold(command_text, |command_text, (i, substitution)| {
+                    .fold(command_text.to_owned(), |command_text, (i, substitution)| {
                         command_text.replace(&format!("{{{i}}}"), &substitution)
                     });
                 let command = Command::parse(command_text);
@@ -252,17 +251,16 @@ impl VirtualMachine {
                 self.set_execution_state(ExecutionState::WaitingForContinue);
                 self.state.program_counter += 1;
             }
-            OpCode::AddOption => {
+            InstructionType::AddOption(AddOptionInstruction { line_id, destination, has_condition, .. }) => {
+                // TODO: Do something with substitution_count
+
                 // Add an option to the current state
-                let string_id: String = instruction.read_operand(0);
-                let string_id: LineId = string_id.into();
-                assert_up_to_date_compiler(instruction.operands.len() >= 4);
-                let line = Line { id: string_id };
+                let line = Line { id: line_id.into() };
 
                 // Indicates whether the VM believes that the
                 // option should be shown to the user, based on any
                 // conditions that were attached to the option.
-                let line_condition_passed = if instruction.read_operand(3) {
+                let line_condition_passed = if *has_condition {
                     // The fourth operand is a bool that indicates
                     // whether this option had a condition or not.
                     // If it does, then a bool value will exist on
@@ -275,19 +273,18 @@ impl VirtualMachine {
                 };
 
                 let index = self.state.current_options.len();
-                let node_name = instruction.read_operand(1);
                 // ## Implementation note:
                 // The original calculates the ID in the `ShowOptions` opcode,
                 // but this way is cleaner because it allows us to store a `DialogueOption` instead of a bunch of values in a big tuple.
                 self.state.current_options.push(DialogueOption {
                     line,
                     id: OptionId(index),
-                    destination_node: node_name,
+                    destination_node: *destination,
                     is_available: line_condition_passed,
                 });
                 self.state.program_counter += 1;
             }
-            OpCode::ShowOptions => {
+            InstructionType::ShowOptions(_) => {
                 // If we have no options to show, immediately stop.
                 if self.state.current_options.is_empty() {
                     self.batched_events.push(DialogueEvent::DialogueComplete);
@@ -310,50 +307,41 @@ impl VirtualMachine {
                 // Not checking the execution state now since we have no line handler to call `continue_` from.
                 self.state.program_counter += 1;
             }
-            OpCode::PushString => {
-                // Pushes a string value onto the stack. The operand is an index into the string table, so that's looked up first.
-                let string_table_index: String = instruction.read_operand(0);
-                self.state.push(string_table_index);
+            InstructionType::PushString(PushStringInstruction { value }) => {
+                // Pushes a string value onto the stack.
+                self.state.push(value.to_owned());
                 self.state.program_counter += 1;
             }
-            OpCode::PushFloat => {
+            InstructionType::PushFloat(PushFloatInstruction { value }) => {
                 // Pushes a floating point onto the stack.
-                let float: f32 = instruction.read_operand(0);
-                self.state.push(float);
+                self.state.push(*value);
                 self.state.program_counter += 1;
             }
-            OpCode::PushBool => {
+            InstructionType::PushBool(PushBoolInstruction { value }) => {
                 // Pushes a boolean value onto the stack.
-                let boolean: bool = instruction.read_operand(0);
-                self.state.push(boolean);
+                self.state.push(*value);
                 self.state.program_counter += 1;
             }
 
-            OpCode::PushNull => {
-                panic!("PushNull is no longer valid op code, because null is no longer a valid value from Yarn Spinner 2.0 onwards. To fix this error, re-compile the original source code.");
-            }
-            OpCode::JumpIfFalse => {
+            InstructionType::JumpIfFalse(JumpIfFalseInstruction { destination }) => {
                 // Jumps to a named label if the value on the top of the stack evaluates to the boolean value 'false'.
                 let is_top_value_true: bool = self.state.peek();
-                if !is_top_value_true {
-                    let label_name: String = instruction.read_operand(0);
-                    let instruction_point = self.find_instruction_point_for_label(&label_name);
-                    self.state.program_counter = instruction_point;
-                } else {
+                if is_top_value_true {
                     self.state.program_counter += 1;
+                } else {
+                    self.state.program_counter = *destination as usize;
                 }
             }
-            OpCode::Pop => {
+            InstructionType::Pop(_) => {
                 // Pops a value from the stack.
                 self.state.pop_value();
                 self.state.program_counter += 1;
             }
-            OpCode::CallFunc => {
+            InstructionType::CallFunc(CallFunctionInstruction { function_name }) => {
                 let actual_parameter_count: usize = self.state.pop();
                 // Get the parameters, which were pushed in reverse
                 let parameters = {
                     let mut parameters: Vec<_> = (0..actual_parameter_count)
-                        .rev()
                         .map(|_| self.state.pop_value().raw_value)
                         .collect();
                     parameters.reverse();
@@ -361,7 +349,6 @@ impl VirtualMachine {
                 };
 
                 // Call a function, whose parameters are expected to be on the stack. Pushes the function's return value, if it returns one.
-                let function_name: String = instruction.read_operand(0);
                 let function =
                     self.library
                         .get(&function_name)
@@ -395,12 +382,11 @@ impl VirtualMachine {
                 self.state.push(typed_return_value);
                 self.state.program_counter += 1;
             }
-            OpCode::PushVariable => {
+            InstructionType::PushVariable(PushVariableInstruction { variable_name }) => {
                 // Get the contents of a variable, push that onto the stack.
-                let variable_name: String = instruction.read_operand(0);
                 let loaded_value = self
                     .variable_storage
-                    .get(&variable_name)
+                    .get(variable_name)
                     .or_else(|e| {
                         if let VariableStorageError::VariableNotFound { .. } = e {
                             // We don't have a value for this. The initial
@@ -412,7 +398,7 @@ impl VirtualMachine {
                                 .as_ref()
                                 .unwrap()
                                 .initial_values
-                                .get(&variable_name)
+                                .get(variable_name)
                                 .unwrap_or_else(|| panic!("The loaded program does not contain an initial value for the variable {variable_name}"))
                                 .clone();
 
@@ -427,14 +413,13 @@ impl VirtualMachine {
                 self.state.push(loaded_value);
                 self.state.program_counter += 1;
             }
-            OpCode::StoreVariable => {
+            InstructionType::StoreVariable(StoreVariableInstruction { variable_name }) => {
                 // Store the top value on the stack in a variable.
                 let top_value = self.state.peek_value().clone();
-                let variable_name: String = instruction.read_operand(0);
-                self.variable_storage.set(variable_name, top_value.into())?;
+                self.variable_storage.set(variable_name.to_owned(), top_value.into())?;
                 self.state.program_counter += 1;
             }
-            OpCode::Stop => {
+            InstructionType::Stop(_) => {
                 // Immediately stop execution, and report that fact.
                 let current_node_name = self.current_node_name.clone().unwrap();
                 self.batched_events
@@ -444,66 +429,39 @@ impl VirtualMachine {
 
                 self.state.program_counter += 1;
             }
-            OpCode::RunNode => {
+            InstructionType::RunNode(RunNodeInstruction { node_name }) => {
                 // Run a node
 
-                // Pop a string from the stack, and jump to a node
-                // with that name.
-                let node_name: String = self.state.pop();
                 self.batched_events
-                    .push(DialogueEvent::NodeComplete(node_name.clone()));
-                self.set_node(&node_name)?;
+                    .push(DialogueEvent::NodeComplete(node_name.to_owned()));
+                self.set_node(node_name)?;
 
                 // No need to increment the program counter, since otherwise we'd skip the first instruction
+                // TODO: Reset program counter?
+            }
+            InstructionType::PeekAndRunNode(_) => {
+                let node_name: String = self.state.pop();
+                self.set_node(node_name)?;
+            }
+            InstructionType::DetourToNode(_) => {
+                unimplemented!("DetourToNode is not implemented yet")
+            }
+            InstructionType::PeekAndDetourToNode(_) => {
+                unimplemented!("PeekAndDetourToNode is not implemented yet")
+            }
+            InstructionType::Return(_) => {
+                unimplemented!("Return is not implemented yet")
+            }
+            InstructionType::AddSaliencyCandidate(_) => {
+                unimplemented!("AddSaliencyCandidate is not implemented yet")
+            }
+            InstructionType::AddSaliencyCandidateFromNode(_) => {
+                unimplemented!("AddSaliencyCandidateFromNode is not implemented yet")
+            }
+            InstructionType::SelectSaliencyCandidate(_) => {
+                unimplemented!("SelectSaliencyCandidate is not implemented yet")
             }
         }
         Ok(())
     }
-
-    /// Looks up the instruction number for a named label in the current node.
-    ///
-    /// # Panics
-    ///
-    /// Panics in the following cases:
-    /// - The label is not found in the current node
-    /// - The current node is unset
-    /// - The found instruction point is negative
-    fn find_instruction_point_for_label(&self, label_name: &str) -> usize {
-        self.current_node
-            .as_ref()
-            .unwrap()
-            .labels
-            .get(label_name)
-            .copied()
-            .unwrap_or_else(|| {
-                panic!(
-                    "Unknown label {label_name} in node {}",
-                    self.current_node_name.as_ref().unwrap()
-                )
-            })
-            .try_into()
-            .unwrap()
-    }
-
-    fn pop_substitutions_with_count_at_operand(
-        &mut self,
-        instruction: &Instruction,
-        index: usize,
-    ) -> Vec<String> {
-        let expression_count: usize = instruction.operands[index].clone().try_into().unwrap();
-        let mut values: Vec<_> = (0..expression_count)
-            .rev()
-            .map(|_| self.state.pop())
-            .collect();
-        values.reverse();
-        values
-    }
-}
-
-fn assert_up_to_date_compiler(predicate: bool) {
-    assert!(
-        predicate,
-        "The Yarn script provided was compiled using an older compiler. \
-        Please recompile it using the latest version of either Yarn Spinner or Yarn Spinner."
-    )
 }

@@ -8,13 +8,7 @@
 use crate::prelude::*;
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bevy", reflect(Debug, PartialEq))]
-#[cfg_attr(
-    all(feature = "bevy", feature = "serde"),
-    reflect(Serialize, Deserialize)
-)]
 /// An event encountered while running [`Dialogue::continue_`]. A caller is expected to handle these events and act accordingly.
 ///
 /// ## Implementation note

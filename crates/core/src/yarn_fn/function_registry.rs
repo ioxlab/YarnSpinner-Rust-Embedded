@@ -1,7 +1,5 @@
 use crate::prelude::*;
 use alloc::borrow::Cow;
-#[cfg(feature = "bevy")]
-use bevy::prelude::*;
 
 use hashbrown::HashMap;
 

@@ -5,13 +5,7 @@ use core::fmt::Display;
 
 /// An option to be presented to the user.
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bevy", reflect(Debug, PartialEq))]
-#[cfg_attr(
-    all(feature = "bevy", feature = "serde"),
-    reflect(Serialize, Deserialize)
-)]
 pub struct DialogueOption {
     /// The [`Line`] that should be presented to the user for this option.
     pub line: Line,
@@ -24,7 +18,7 @@ pub struct DialogueOption {
     /// The name of the node that will be run if this option is selected.
     ///
     /// The value of this property not be valid if this is a shortcut option.
-    pub destination_node: String,
+    pub destination_node: i32,
 
     /// Gets a value indicating whether the player should be permitted to select this option.
     ///
@@ -42,13 +36,7 @@ pub struct DialogueOption {
 /// Since the IDs are just zero-based indices, you can also derive them yourself. Note that the index numeration includes options which
 /// have [`DialogueOption::is_available`] set to `false`, so the index of an option may not be as it appears in the list of options presented to the user.11
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bevy", reflect(Debug, PartialEq, Hash))]
-#[cfg_attr(
-    all(feature = "bevy", feature = "serde"),
-    reflect(Serialize, Deserialize)
-)]
 pub struct OptionId(pub usize);
 
 impl Display for OptionId {

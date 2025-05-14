@@ -2,11 +2,9 @@
 
 use crate::markup::MarkupParseError;
 use crate::prelude::*;
-#[cfg(feature = "bevy")]
-use bevy::prelude::World;
-use bevy_platform::collections::HashMap;
 use core::error::Error;
 use core::fmt::{self, Debug, Display};
+use std::collections::HashMap;
 use log::error;
 use yarnspinner_core::prelude::*;
 
@@ -175,38 +173,9 @@ impl Dialogue {
     /// Specifically, we cannot guarantee [`Send`] and [`Sync`] properly without a lot of [`std::sync::RwLock`] boilerplate. The original implementation
     /// also allows unsound parallel mutation of [`Dialogue`]'s state, which would result in a deadlock in our case.
     pub fn continue_(&mut self) -> Result<Vec<DialogueEvent>> {
-        #[cfg(feature = "bevy")]
-        bevy::prelude::warn!("Called `continue_` on a dialogue that was compiled with the `bevy` feature. Did you mean to call `continue_with_world` instead?");
-
         self.vm.continue_(|vm, instruction| {
             vm.run_instruction(instruction, |function, parameters| {
                 function.call(parameters)
-            })
-        })
-    }
-
-    #[cfg(feature = "bevy")]
-    /// The Bevy version of [`Dialogue::continue_`].
-    /// Starts, or continues, execution of the current program.
-    ///
-    /// Calling this method returns a batch of [`DialogueEvent`]s that should be handled by the caller before calling [`Dialogue::continue_`] again.
-    /// Some events can be ignored, however this method will error if the following events are not properly handled:
-    /// - [`DialogueEvent::Options`] indicates that the program is waiting for the user to select an option.
-    ///   The user's selection must be passed to [`Dialogue::set_selected_option`] before calling [`Dialogue::continue_with_world`] again.
-    /// - [`DialogueEvent::DialogueComplete`] means that the program reached its end.
-    ///   When this occurs, [`Dialogue::set_node`] must be called before [`Dialogue::continue_with_world`] is called again.
-    ///
-    /// See the documentation of [`DialogueEvent`] for more information on how to handle each event.
-    ///
-    /// ## Implementation Notes
-    ///
-    /// All handlers in the original were converted to [`DialogueEvent`]s because registration of complex callbacks is very unidiomatic in Rust.
-    /// Specifically, we cannot guarantee [`Send`] and [`Sync`] properly without a lot of [`std::sync::RwLock`] boilerplate. The original implementation
-    /// also allows unsound parallel mutation of [`Dialogue`]'s state, which would result in a deadlock in our case.
-    pub fn continue_with_world(&mut self, world: &mut World) -> Result<Vec<DialogueEvent>> {
-        self.vm.continue_(move |vm, instruction| {
-            vm.run_instruction(instruction, |function, parameters| {
-                function.call_with_world(parameters, world)
             })
         })
     }
@@ -306,18 +275,6 @@ impl Dialogue {
             .map(|_| format!("line:{node_name}").into())
     }
 
-    /// Returns the tags for the node `node_name`.
-    ///
-    /// The tags for a node are defined by setting the `tags` header in
-    /// the node's source code. This header must be a space-separated list
-    ///
-    /// Returns [`None`] if the node is not present in the program.
-    #[must_use]
-    pub fn get_tags_for_node(&self, node_name: &str) -> Option<Vec<String>> {
-        self.get_node_logging_errors(node_name)
-            .map(|node| node.tags)
-    }
-
     /// Returns the headers for the node `node_name`.
     ///
     /// The headers are all the key-value pairs defined in the node's source code
@@ -352,17 +309,6 @@ impl Dialogue {
     #[must_use]
     pub fn current_node(&self) -> Option<String> {
         self.vm.current_node()
-    }
-
-    /// Analyses the currently loaded Yarn program with the given [`Context`]. Call [`Context::finish_analysis`] afterwards to get the results.
-    pub fn analyse(&self, context: &mut Context) -> &Self {
-        let program = self
-            .vm
-            .program
-            .as_ref()
-            .expect("Failed to analyse program: No program loaded");
-        context.diagnose_program(program);
-        self
     }
 
     fn get_node_logging_errors(&self, node_name: &str) -> Option<Node> {

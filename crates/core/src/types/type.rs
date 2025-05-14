@@ -23,13 +23,7 @@ use core::fmt::{Debug, Display};
 /// representation of the types than dynamic dispatch. The `Undefined` "variant", which was a simple `null`,
 /// was also replaced by the more idiomatic `Option::None`.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]
-#[cfg_attr(feature = "bevy", derive(Reflect))]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bevy", reflect(Debug, PartialEq, Default, Hash))]
-#[cfg_attr(
-    all(feature = "bevy", feature = "serde"),
-    reflect(Serialize, Deserialize)
-)]
 pub enum Type {
     #[default]
     /// The type representing any value

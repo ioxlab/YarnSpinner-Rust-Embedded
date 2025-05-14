@@ -18,5 +18,5 @@ name = "generate_proto"
 required-features = ["proto"]
 
 [dependencies]
-prost = { version = "0.12", optional = true }
-prost-build = { version = "0.12", optional = true }
+prost = { version = "0.13", optional = true }
+prost-build = { version = "0.13", optional = true }
