@@ -3,6 +3,7 @@
 use reader::*;
 use std::fmt::Debug;
 use std::str::FromStr;
+use yarnspinner_core::prelude::LineId;
 
 mod reader;
 
@@ -15,7 +16,8 @@ pub(crate) struct Step {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StepValue {
-    String(String),
+    Command(String),
+    LineId(LineId),
     Number(usize),
 }
 

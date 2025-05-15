@@ -374,7 +374,7 @@ impl VirtualMachine {
                     .unwrap_or_else(|e| panic!("Failed to get Yarn type for return type id of function {function_name}: {e:?}"));
                 let typed_return_value = InternalValue {
                     raw_value: return_value,
-                    r#type: return_type,
+                    type_: return_type,
                 };
                 // ## Implementation note:
                 // The original code first checks whether the return type is `void`. This is vestigial from the v1 compiler.

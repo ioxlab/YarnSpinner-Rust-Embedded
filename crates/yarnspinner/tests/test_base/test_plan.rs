@@ -15,7 +15,7 @@ pub struct TestPlan {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProcessedOption {
-    pub line: String,
+    pub line: LineId,
     pub enabled: bool,
 }
 
@@ -56,7 +56,7 @@ impl TestPlan {
         for current_step in self.steps.iter().skip(self.current_test_plan_step) {
             self.current_test_plan_step += 1;
             if current_step.expected_step_type == ExpectedStepType::Option {
-                let Some(StepValue::String(line)) = current_step.value.clone() else {
+                let Some(StepValue::LineId(line)) = current_step.value.clone() else {
                     panic!("Expected option line to be a string");
                 };
 

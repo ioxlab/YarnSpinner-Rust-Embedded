@@ -12,32 +12,25 @@
 #![allow(dead_code)]
 
 use crate::prelude::*;
-#[cfg(feature = "bevy")]
-use bevy::prelude::World;
-use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::result::Result;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use yarnspinner::compiler::*;
 use yarnspinner::core::*;
 use yarnspinner::runtime::*;
 
-mod extensions;
 mod logger;
 mod paths;
 mod step;
 mod test_plan;
-mod text_provider;
 use logger::*;
-pub use text_provider::SharedTextProvider;
 use yarnspinner::log::{self, LevelFilter, SetLoggerError};
 
 pub mod prelude {
     #[allow(unused_imports)] // False positive
-    pub use crate::test_base::{extensions::*, paths::*, step::*, test_plan::*, *};
+    pub use crate::test_base::{paths::*, step::*, test_plan::*, *};
 }
 
 pub fn init_logger(runtime_errors_cause_failure: Arc<AtomicBool>) -> Result<(), SetLoggerError> {
@@ -49,7 +42,6 @@ pub fn init_logger(runtime_errors_cause_failure: Arc<AtomicBool>) -> Result<(), 
 pub struct TestBase {
     pub dialogue: Dialogue,
     pub test_plan: Option<TestPlan>,
-    pub string_table: SharedTextProvider,
     pub variable_storage: MemoryVariableStorage,
     runtime_errors_cause_failure: Arc<AtomicBool>,
 }
@@ -61,11 +53,9 @@ impl Default for TestBase {
             // We've set the logger twice, that's alright for the tests.
         }
         let variable_storage = MemoryVariableStorage::new();
-        let string_table = SharedTextProvider::new(StringTableTextProvider::new());
 
         let mut dialogue = Dialogue::new(
             Box::new(variable_storage.clone()),
-            Box::new(string_table.clone()),
         );
         dialogue
             .library_mut()
@@ -79,7 +69,6 @@ impl Default for TestBase {
             dialogue,
             runtime_errors_cause_failure,
             variable_storage,
-            string_table,
             test_plan: Default::default(),
         }
     }
@@ -111,13 +100,6 @@ impl TestBase {
     }
 
     #[must_use]
-    pub fn with_compilation(self, compilation: Compilation) -> Self {
-        let string_table = compilation.string_table;
-        self.with_program(compilation.program.unwrap())
-            .with_string_table(string_table)
-    }
-
-    #[must_use]
     pub fn extend_library(mut self, extend_fn: impl Fn(&mut Library)) -> Self {
         let library = self.dialogue.library_mut();
         extend_fn(library);
@@ -130,35 +112,12 @@ impl TestBase {
         self
     }
 
-    #[must_use]
-    pub fn with_string_table(mut self, string_table: HashMap<LineId, StringInfo>) -> Self {
-        let string_table: HashMap<_, _> = string_table
-            .into_iter()
-            .map(|(id, info)| (id, info.text))
-            .collect();
-        let mut string_table_provider = StringTableTextProvider::new();
-        string_table_provider.extend_base_language(string_table.clone());
-        string_table_provider.extend_translation("en-US", string_table);
-        self.string_table.replace(string_table_provider);
-        self.dialogue.set_language_code(Language::from("en-US"));
-        self
-    }
-
     /// Executes the named node, and checks any assertions made during
     /// execution. Fails the test if an assertion made in Yarn fails.
     pub fn run_standard_testcase(&mut self) -> &mut Self {
         self.dialogue.set_node("Start").unwrap();
 
-        #[cfg(feature = "bevy")]
-        let mut world = World::default();
-
         while self.dialogue.can_continue() {
-            #[cfg(feature = "bevy")]
-            let events = self
-                .dialogue
-                .continue_with_world(&mut world)
-                .unwrap_or_else(|e| panic!("Encountered error while running dialogue: {e}"));
-            #[cfg(not(feature = "bevy"))]
             let events = self
                 .dialogue
                 .continue_()
@@ -167,7 +126,7 @@ impl TestBase {
             for event in events {
                 match event {
                     DialogueEvent::Line(line) => {
-                        println!("Line: {}", line.text);
+                        println!("Line: {}", line.id);
                         let Some(test_plan) = self.test_plan.as_mut() else {
                             continue;
                         };
@@ -177,12 +136,12 @@ impl TestBase {
                             ExpectedStepType::Line,
                             test_plan.next_expected_step,
                             "Received line {}, but was expecting a {:?}",
-                            line.text,
+                            line.id,
                             test_plan.next_expected_step
                         );
                         assert_eq!(
                             test_plan.next_step_value,
-                            Some(StepValue::String(line.text))
+                            Some(StepValue::LineId(line.id))
                         );
                     }
                     DialogueEvent::Options(options) => {
@@ -191,7 +150,7 @@ impl TestBase {
                         let options: Vec<_> = options
                             .into_iter()
                             .map(|option| ProcessedOption {
-                                line: option.line.text,
+                                line: option.line.id,
                                 enabled: option.is_available,
                             })
                             .collect();
@@ -245,12 +204,11 @@ impl TestBase {
                         // refer to the string table to get the text.
                         assert_eq!(
                             test_plan.next_step_value,
-                            Some(StepValue::String(command.raw))
+                            Some(StepValue::Command(command.raw))
                         );
                     }
                     DialogueEvent::NodeComplete(_) => {}
                     DialogueEvent::NodeStart(_) => {}
-                    DialogueEvent::LineHints(_) => {}
                     DialogueEvent::DialogueComplete => {
                         let Some(test_plan) = self.test_plan.as_mut() else {
                             continue;

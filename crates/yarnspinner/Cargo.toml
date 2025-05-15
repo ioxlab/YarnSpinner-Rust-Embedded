@@ -26,4 +26,4 @@ log = { version = "0.4", features = ["std"] }
 [dev-dependencies]
 regex = "1"
 anyhow = "1"
-bevy_platform = "0.16.0"
+prost = "0.13.5"

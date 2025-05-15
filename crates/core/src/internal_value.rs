@@ -15,8 +15,8 @@ use crate::types::{Type, TypedValue as _};
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct InternalValue {
     /// The proper Yarn type of this value according to the type checker.
-    pub r#type: Type,
-    /// The actual value. If [`InternalValue::type`] is [`Type::Function`], this is the return type.
+    pub type_: Type,
+    /// The actual value. If [`InternalValue::type_`] is [`Type::Function`], this is the return type.
     pub raw_value: YarnValue,
 }
 
@@ -26,7 +26,7 @@ macro_rules! impl_from {
             impl From<$from_type> for InternalValue {
                 fn from(value: $from_type) -> Self {
                     Self {
-                        r#type: value.r#type(),
+                        type_: value.r#type(),
                         raw_value: value.into(),
                     }
                 }
@@ -61,7 +61,7 @@ impl_from![bool, f32, f64, i8, i16, i32, i64, i128, u8, u16, u32, u64, u128, usi
 impl From<&str> for InternalValue {
     fn from(value: &str) -> Self {
         Self {
-            r#type: value.r#type(),
+            type_: value.r#type(),
             raw_value: value.into(),
         }
     }
@@ -70,7 +70,7 @@ impl From<&str> for InternalValue {
 impl From<String> for InternalValue {
     fn from(value: String) -> Self {
         Self {
-            r#type: value.r#type(),
+            type_: value.r#type(),
             raw_value: value.into(),
         }
     }
@@ -85,7 +85,7 @@ impl From<InternalValue> for String {
 impl From<YarnValue> for InternalValue {
     fn from(value: YarnValue) -> Self {
         Self {
-            r#type: value.r#type(),
+            type_: value.r#type(),
             raw_value: value,
         }
     }

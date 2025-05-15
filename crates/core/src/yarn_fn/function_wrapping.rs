@@ -40,27 +40,6 @@ use variadics_please::all_tuples;
 /// Narrator: {give_summary($name, $age, $is_cool)}
 /// ```
 ///
-/// A bevy system:
-/// ```rust
-/// # use bevy::prelude::*;
-/// #[derive(Component)]
-/// struct Age(u32);
-/// fn give_summary_from_bevy(In(name): In<&str>, ages: Query<(&Name, &Age)>) -> String {
-///     for (found_name, age) in &ages {
-///         if name == found_name.as_str() {
-///             return format!("{name} is {} years old", age.0)
-///         }
-///     }
-///    format!("{name} is ageless")
-/// }
-/// # // assert the example is actually a valid system
-/// # World::default().register_system(give_summary_from_bevy);
-/// ```
-/// Which may be called from Yarn as follows:
-/// ```text
-/// <<set $name to "Bob">>
-/// Narrator: {give_summary_from_bevy($name)}
-/// ```
 pub trait YarnFn<Marker>: Clone + Send + Sync {
     /// The type of the value returned by this function. See [`YarnFn`] for more information about what is allowed.
     type Out: IntoYarnValueFromNonYarnValue + 'static;
@@ -251,8 +230,6 @@ all_tuples!(impl_yarn_fn_tuple, 0, 16, P);
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(feature = "bevy")]
-    use bevy::prelude::*;
 
     #[test]
     fn accepts_no_params() {
@@ -342,113 +319,6 @@ mod tests {
         accept_yarn_fn(f);
     }
 
-    #[cfg(feature = "bevy")]
-    #[test]
-    fn accepts_system() {
-        let mut world = World::default();
-        fn f(_: In<u32>, _: Query<Entity>) -> u32 {
-            0
-        }
-        accept_yarn_fn(world.register_system(f));
-    }
-
-    #[cfg(feature = "bevy")]
-    #[test]
-    fn accepts_systemparam_only_system() {
-        let mut world = World::default();
-        fn f(_: Query<Entity>) -> u32 {
-            0
-        }
-        accept_yarn_fn(world.register_system(f));
-    }
-
-    #[cfg(feature = "bevy")]
-    #[test]
-    fn accepts_degenerate_system() {
-        let mut world = World::default();
-        fn f() -> u32 {
-            0
-        }
-        accept_yarn_fn(world.register_system(f));
-    }
-
-    /*
-        #[cfg(feature = "bevy")]
-        #[test]
-        fn accepts_system_with_str_ref_input() {
-            let mut world = World::default();
-            fn f(_: In<&str>) -> u32 {
-                0
-            }
-            accept_yarn_fn(world.register_system(f));
-        }
-    */
-
-    #[cfg(feature = "bevy")]
-    #[test]
-    fn accepts_system_with_complex_inputs() {
-        let mut world = World::default();
-        fn f(_: In<((u32, i32), Option<String>)>, _: Query<Entity>) -> u32 {
-            0
-        }
-        accept_yarn_fn(world.register_system(f));
-    }
-
-    #[cfg(feature = "bevy")]
-    #[test]
-    fn can_call_degenerate_system() {
-        let mut world = World::default();
-        fn f() -> u32 {
-            42
-        }
-        let id = world.register_system(f);
-        let out = id.call_with_world(vec![], &mut world);
-        assert_eq!(out, 42);
-    }
-
-    #[cfg(feature = "bevy")]
-    #[test]
-    fn can_call_system_with_input() {
-        let mut world = World::default();
-        fn f(In(num): In<u32>) -> u32 {
-            num
-        }
-        let id = world.register_system(f);
-        let out = id.call_with_world(vec![YarnValue::from(42)], &mut world);
-        assert_eq!(out, 42);
-    }
-
-    #[cfg(feature = "bevy")]
-    #[test]
-    fn can_call_system_with_multiple_inputs() {
-        let mut world = World::default();
-        fn f(In((a, b)): In<(u32, u32)>, _: Query<Entity>) -> u32 {
-            a + b
-        }
-        let id = world.register_system(f);
-        let out: u32 =
-            id.call_with_world(vec![YarnValue::from(40), YarnValue::from(2)], &mut world);
-        assert_eq!(out, 42);
-    }
-
-    #[cfg(feature = "bevy")]
-    #[test]
-    fn can_call_system_with_complex_inputs() {
-        let mut world = World::default();
-        fn f(In(((a, b), maybe_c)): In<((u32, u32), Option<u32>)>) -> u32 {
-            a + b + maybe_c.unwrap_or(0)
-        }
-        let id = world.register_system(f);
-        let out: u32 =
-            id.call_with_world(vec![YarnValue::from(40), YarnValue::from(1)], &mut world);
-        assert_eq!(out, 41);
-        let out: u32 = id.call_with_world(
-            vec![YarnValue::from(40), YarnValue::from(1), YarnValue::from(1)],
-            &mut world,
-        );
-        assert_eq!(out, 42);
-    }
-
     #[test]
     fn accepts_lots_of_different_types() {
         #[allow(clippy::too_many_arguments)]
@@ -510,9 +380,6 @@ mod tests {
     where
         T: YarnFn<Marker>,
     {
-        #[cfg(feature = "bevy")]
-        let out = f.call_with_world(input, &mut World::default());
-        #[cfg(not(feature = "bevy"))]
         let out = f.call(input);
         out
     }

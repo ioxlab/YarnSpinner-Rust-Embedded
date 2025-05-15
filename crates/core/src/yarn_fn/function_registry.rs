@@ -106,9 +106,6 @@ mod tests {
         functions.register_function("test", || true);
         let function = functions.get("test").unwrap();
         let params = vec![];
-        #[cfg(feature = "bevy")]
-        let result = function.call_with_world(params, &mut World::default());
-        #[cfg(not(feature = "bevy"))]
         let result = function.call(params);
         let result: bool = result.try_into().unwrap();
 
@@ -122,44 +119,10 @@ mod tests {
         functions.register_function("test", |a: f32| a);
         let function = functions.get("test").unwrap();
         let params = to_function_params([1.0]);
-        #[cfg(feature = "bevy")]
-        let result = function.call_with_world(params, &mut World::default());
-        #[cfg(not(feature = "bevy"))]
         let result = function.call(params);
         let result: f32 = result.try_into().unwrap();
 
         assert_eq!(result, 1.0);
-    }
-
-    #[cfg(feature = "bevy")]
-    #[test]
-    fn can_access_bevy_world() {
-        let mut functions = YarnFnRegistry::default();
-        let mut world = World::default();
-
-        let entity = world.spawn(Name::new("test_entity")).id();
-
-        functions.register_function(
-            "test1",
-            world.register_system(move |query: Query<(Entity, &Name)>| {
-                let mut did_find = false;
-                for (found_entity, found_name) in &query {
-                    assert_eq!(found_entity, entity);
-                    assert_eq!(found_name.as_str(), "test_entity");
-                    did_find = true;
-                }
-                did_find
-            }),
-        );
-
-        let function1 = functions.get("test1").unwrap();
-        let params = vec![];
-        #[cfg(feature = "bevy")]
-        let result = function1.call_with_world(params, &mut world);
-        #[cfg(not(feature = "bevy"))]
-        let result = function1.call(params);
-        let result: bool = result.try_into().unwrap();
-        assert!(result);
     }
 
     #[test]
@@ -179,19 +142,10 @@ mod tests {
         let function1 = functions.get("test1").unwrap();
         let function2 = functions.get("test2").unwrap();
 
-        #[cfg(feature = "bevy")]
-        let mut world = World::default();
-
         let params1 = vec![];
         let params2 = to_function_params([1.0]);
-        #[cfg(feature = "bevy")]
-        let result1 = function1.call_with_world(params1, &mut world);
-        #[cfg(not(feature = "bevy"))]
         let result1 = function1.call(params1);
         let result1: bool = result1.try_into().unwrap();
-        #[cfg(feature = "bevy")]
-        let result2 = function2.call_with_world(params2, &mut world);
-        #[cfg(not(feature = "bevy"))]
         let result2 = function2.call(params2);
         let result2: f32 = result2.try_into().unwrap();
 
@@ -216,9 +170,6 @@ mod tests {
         let function3 = functions.get("test3").unwrap();
         let function4 = functions.get("test4").unwrap();
 
-        #[cfg(feature = "bevy")]
-        let mut world = World::default();
-
         let params1 = vec![];
         let params2 = to_function_params([1.0, 2.0]);
         let params3 = to_function_params([1.0, 2.0, 3.0]);
@@ -229,24 +180,12 @@ mod tests {
             true.into(),
             1.0.into(),
         ]);
-        #[cfg(feature = "bevy")]
-        let result1 = function1.call_with_world(params1, &mut world);
-        #[cfg(not(feature = "bevy"))]
         let result1 = function1.call(params1);
         let result1: bool = result1.try_into().unwrap();
-        #[cfg(feature = "bevy")]
-        let result2 = function2.call_with_world(params2, &mut world);
-        #[cfg(not(feature = "bevy"))]
         let result2 = function2.call(params2);
         let result2: f32 = result2.try_into().unwrap();
-        #[cfg(feature = "bevy")]
-        let result3 = function3.call_with_world(params3, &mut world);
-        #[cfg(not(feature = "bevy"))]
         let result3 = function3.call(params3);
         let result3: f32 = result3.try_into().unwrap();
-        #[cfg(feature = "bevy")]
-        let result4 = function4.call_with_world(params4, &mut world);
-        #[cfg(not(feature = "bevy"))]
         let result4 = function4.call(params4);
         let result4: String = result4.into();
 
