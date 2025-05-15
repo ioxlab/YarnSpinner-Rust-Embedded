@@ -111,7 +111,7 @@ impl VirtualMachine {
 
         while self.execution_state == ExecutionState::Running {
             let current_node = self.current_node.clone().unwrap();
-            let current_instruction = &current_node.instructions[self.state.program_counter as usize];
+            let current_instruction = &current_node.instructions[self.state.program_counter];
             instruction_fn(self, current_instruction)?;
             // ## Implementation note
             // The original increments the program counter here, but that leads to intentional underflow on [`OpCode::RunNode`],
