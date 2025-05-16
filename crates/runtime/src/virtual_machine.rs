@@ -161,8 +161,7 @@ impl VirtualMachine {
         // We now know what number option was selected; push the
         // corresponding node name to the stack.
         let destination_node = self.state.current_options[selected_option_id.0]
-            .destination_node
-            .clone();
+            .destination_node;
         self.state.push(destination_node);
 
         // We no longer need the accumulated list of options; clear it
@@ -210,8 +209,6 @@ impl VirtualMachine {
             InstructionType::RunLine(RunLineInstruction { line_id, substitution_count }) => {
                 // Looks up a string from the string table and passes it to the client as a line
 
-                let string_id: LineId = line_id.into();
-
                 // The second operand, if provided (compilers prior
                 // to v1.1 don't include it), indicates the number
                 // of expressions in the line. We need to pop these
@@ -221,7 +218,7 @@ impl VirtualMachine {
                     self.state.pop_value();
                 }
 
-                self.batched_events.push(DialogueEvent::Line(Line { id: string_id }));
+                self.batched_events.push(DialogueEvent::Line(*line_id));
 
                 // Implementation note:
                 // In the original, this is only done if `execution_state` is still `DeliveringContent`,
@@ -251,11 +248,8 @@ impl VirtualMachine {
                 self.set_execution_state(ExecutionState::WaitingForContinue);
                 self.state.program_counter += 1;
             }
-            InstructionType::AddOption(AddOptionInstruction { line_id, destination, has_condition, .. }) => {
+            InstructionType::AddOption(AddOptionInstruction { tag_id, destination, has_condition, .. }) => {
                 // TODO: Do something with substitution_count
-
-                // Add an option to the current state
-                let line = Line { id: line_id.into() };
 
                 // Indicates whether the VM believes that the
                 // option should be shown to the user, based on any
@@ -271,13 +265,13 @@ impl VirtualMachine {
                 } else {
                     true
                 };
-
+                
                 let index = self.state.current_options.len();
                 // ## Implementation note:
                 // The original calculates the ID in the `ShowOptions` opcode,
                 // but this way is cleaner because it allows us to store a `DialogueOption` instead of a bunch of values in a big tuple.
                 self.state.current_options.push(DialogueOption {
-                    line,
+                    tag_id: *tag_id, // 
                     id: OptionId(index),
                     destination_node: *destination,
                     is_available: line_condition_passed,
@@ -351,7 +345,7 @@ impl VirtualMachine {
                 // Call a function, whose parameters are expected to be on the stack. Pushes the function's return value, if it returns one.
                 let function =
                     self.library
-                        .get(&function_name)
+                        .get(function_name)
                         .ok_or(DialogueError::FunctionNotFound {
                             function_name: function_name.to_string(),
                             library: self.library.clone(),

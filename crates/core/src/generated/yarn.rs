@@ -166,11 +166,12 @@ pub mod instruction {
         all(feature = "bevy", feature = "serde"),
         reflect(Serialize, Deserialize)
     )]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
     pub struct RunLineInstruction {
         /// The ID of the localised content that should be shown for this line.
-        #[prost(string, tag = "1")]
-        pub line_id: ::prost::alloc::string::String,
+        ///         string lineID = 1;
+        #[prost(uint32, tag = "100")]
+        pub line_id: u32,
         /// The number of substitutions present in this line that must be popped
         /// off the stack.
         #[prost(int32, tag = "2")]
@@ -202,11 +203,12 @@ pub mod instruction {
         all(feature = "bevy", feature = "serde"),
         reflect(Serialize, Deserialize)
     )]
-    #[derive(Clone, PartialEq, ::prost::Message)]
+    #[derive(Clone, Copy, PartialEq, ::prost::Message)]
     pub struct AddOptionInstruction {
         /// The ID of the content that should be shown for this option.
-        #[prost(string, tag = "1")]
-        pub line_id: ::prost::alloc::string::String,
+        ///         string lineID = 1;
+        #[prost(uint32, tag = "100")]
+        pub tag_id: u32,
         /// The instruction number in the current node to jump to if this option
         /// is selected.
         #[prost(int32, tag = "2")]

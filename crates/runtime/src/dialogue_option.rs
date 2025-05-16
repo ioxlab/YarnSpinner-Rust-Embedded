@@ -7,8 +7,8 @@ use core::fmt::Display;
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DialogueOption {
-    /// The [`Line`] that should be presented to the user for this option.
-    pub line: Line,
+    /// The tag which selects this option.
+    pub tag_id: u32,
 
     /// The identifying number for this option.
     ///

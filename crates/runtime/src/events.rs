@@ -16,7 +16,7 @@ use crate::prelude::*;
 /// Corresponds to Yarn Spinner's `<EventName>Handler`s.
 pub enum DialogueEvent {
     /// A [`Line`] should be presented to the user.
-    Line(Line),
+    Line(u32),
     /// A list of [`DialogueOption`]s should be presented to the user, who in turns must select one of them.
     /// The selected option must be communicated to the [`Dialogue`] via [`Dialogue::set_selected_option`] before calling [`Dialogue::continue_`] again.
     Options(Vec<DialogueOption>),
